@@ -1,15 +1,24 @@
 {
-  "name": "github-action-safe-link-checker",
-  "version": "1.0.0",
-  "description": "Check the links used in your apps are safe",
-  "main": "index.js",
-  "dependencies": {
-    "axios": "^0.21.0"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Mark Battistella",
-  "license": "MIT"
+	"name": "markdown-safe-link",
+	"description": "Check the links used in your apps are safe",
+	"version": "1.0.0",
+	"main": "bin/index.js",
+	"author": "Mark Battistella (https://twitter.com/markbattistella)",
+	"license": "GNU GPLv3",
+	"homepage": "https://github.com/markbattistella/markdown-safe-link",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/markbattistella/markdown-safe-link.git"
+	},
+	"bugs": {
+		"url": "git+https://github.com/markbattistella/markdown-safe-link/issues"
+	},
+	"dependencies": {
+		"axios": "^0.21.0",
+		"glob": "^7.1.6"
+	},
+	"scripts": {},
+	"bin": {
+		"markdown-safe-link": "./bin/index.js"
+	}
 }
