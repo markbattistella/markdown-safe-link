@@ -19,6 +19,6 @@
 	},
 	"scripts": {},
 	"bin": {
-		"markdown-safe-link": "./bin/index.js"
+		"markdown-safe-link": "bin/index.js"
 	}
 }
