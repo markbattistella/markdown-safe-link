@@ -1,7 +1,7 @@
 {
 	"name": "@markbattistella/markdown-safe-link",
 	"description": "Check the links used in your apps are safe",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"main": "bin/index.js",
 	"author": "Mark Battistella (https://twitter.com/markbattistella)",
 	"license": "GNU GPLv3",
