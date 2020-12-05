@@ -14,9 +14,9 @@
 
 I started with this tweet by [@seanallen](https://twitter.com/seanallen_dev):
 
-<blockquote class="twitter-tweet" data-dnt="true" data-theme="light"><p lang="en" dir="ltr">I may need to stop including links in my videos that feature others (Swift News, etc). Turns out if a site I link to gets compromised, my channel is affected. The link redacted below goes to a site marked &quot;deceptive&quot; by Google. For those that don&#39;t know, 3 strikes and you&#39;re done <a href="https://t.co/RefaHgHRLY">pic.twitter.com/RefaHgHRLY</a></p>&mdash; Sean Allen (@seanallen_dev) <a href="https://twitter.com/seanallen_dev/status/1332696819625844736?ref_src=twsrc%5Etfw">November 28, 2020</a></blockquote><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote class="twitter-tweet" data-dnt="true" data-theme="light"><p lang="en" dir="ltr">I may need to stop including links in my videos that feature others (Swift News, etc). Turns out if a site I link to gets compromised, my channel is affected. The link redacted below goes to a site marked &quot;deceptive&quot; by Google. For those that don&#39;t know, 3 strikes and you&#39;re done <a href="https://t.co/RefaHgHRLY">pic.twitter.com/RefaHgHRLY</a></p>&mdash; Sean Allen (@seanallen_dev) <a href="https://twitter.com/seanallen_dev/status/1332696819625844736?ref_src=twsrc%5Etfw">November 28, 2020</a></blockquote>
 
-to which I realised there isn't anything out there to do prevent this!
+To which I realised there isn't anything out there to do prevent this!
 
 ## How it works
 
