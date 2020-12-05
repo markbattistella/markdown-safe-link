@@ -1,5 +1,5 @@
 {
-	"name": "markdown-safe-link",
+	"name": "@markbattistella/markdown-safe-link",
 	"description": "Check the links used in your apps are safe",
 	"version": "1.0.0",
 	"main": "bin/index.js",
