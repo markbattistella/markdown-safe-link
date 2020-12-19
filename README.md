@@ -24,22 +24,22 @@ To which I realised there isn't anything out there to do prevent this!
 
 1. Install the module from npm
 
-  ```sh
-  # locally
-  npm i @markbattistella/markdown-safe-link
+    ```sh
+    # locally
+    npm i @markbattistella/markdown-safe-link
 
-  # globally
-  npm i @markbattistella/markdown-safe-link -g
-  ```
+    # globally
+    npm i @markbattistella/markdown-safe-link -g
+    ```
 
 1. Run it from your terminal
 
-  ```sh
-  markdown-safe-link \
-      --api="<YOUR_API_KEY_HERE>" \
-      --dir="~/projects/my-docs/" \
-      --replace="UNSAFE"
-  ```
+    ```sh
+    markdown-safe-link \
+        --api="<YOUR_API_KEY_HERE>" \
+        --dir="~/projects/my-docs/" \
+        --replace="UNSAFE"
+    ```
 
 ## Watch it work
 
