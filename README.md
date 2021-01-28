@@ -2,27 +2,23 @@
 
 # Markdown Safe Web Browsing
 
+[![Help donate](https://img.shields.io/badge/%20-@markbattistella-blue?logo=paypal)](https://www.paypal.me/markbattistella/6AUD)
+[![Buy me a coffee](https://img.shields.io/badge/%20-buymeacoffee-black?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/markbattistella)
+
 ---
-
-[![Help donate](https://img.shields.io/badge/%20-@markbattistella-blue?logo=paypal)](https://www.paypal.me/markbattistella/6AUD) [![Buy me a coffee](https://img.shields.io/badge/%20-buymeacoffee-black?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/markbattistella)
-
----
-
 </div>
 
-## How we got here
+## Background
 
-I started with this tweet by [@seanallen](https://twitter.com/seanallen_dev):
+I started with this tweet by [@seanallen](https://twitter.com/seanallen_dev/status/1332696819625844736) where he added a URL into a YouTube video description.
 
-<blockquote class="twitter-tweet" data-dnt="true" data-theme="light"><p lang="en" dir="ltr">I may need to stop including links in my videos that feature others (Swift News, etc). Turns out if a site I link to gets compromised, my channel is affected. The link redacted below goes to a site marked &quot;deceptive&quot; by Google. For those that don&#39;t know, 3 strikes and you&#39;re done <a href="https://t.co/RefaHgHRLY">pic.twitter.com/RefaHgHRLY</a></p>&mdash; Sean Allen (@seanallen_dev) <a href="https://twitter.com/seanallen_dev/status/1332696819625844736?ref_src=twsrc%5Etfw">November 28, 2020</a></blockquote>
+The URL became compromised within the week of adding it, and his channel was flagged with **strike 1**.
 
-To which I realised there isn't anything out there to do prevent this!
+I realised there isn't anything out there to prevent this from happening to anyone's repository.
 
-## How it works
+## Usage
 
-1. You need to get your own API for [Google Safe Browsing](https://developers.google.com/safe-browsing/)
-
-1. Install the module from npm
+1. Install the module from `npm`
 
     ```sh
     # locally
@@ -38,12 +34,46 @@ To which I realised there isn't anything out there to do prevent this!
     markdown-safe-link \
         --api="<YOUR_API_KEY_HERE>" \
         --dir="~/projects/my-docs/" \
-        --replace="UNSAFE"
+        --replace="~~UNSAFE~~"
     ```
 
-## Watch it work
+### Github action
 
-> I tried recording it but its way too quick - I'll get a video one day!
+If you want to use this as part of your repository there is also [an action you can use](https://github.com/markbattistella/markdown-safe-link-action).
+
+## Requirements
+
+You need to get your own API for [Google Safe Browsing](https://developers.google.com/safe-browsing/) as there are limits to the number of calls made.
+
+## Configuration
+
+| Name       | Description                     |
+|------------|---------------------------------|
+| `dir`      | The directory to scan md files  |
+| `api`      | Google API for scanning URLs    |
+| `replace`  | What to replace the URLs with   |
+| `proxy`    | Are you behind a proxy server   |
+| `url`      | Proxy url address or IP address |
+| `port`     | Proxy port number               |
+| `username` | Username if your proxy has auth |
+| `password` | Password if your proxy has auth |
+| `dry`      | Don't actually re-write files   |
+| `help`     | Display the help screen         |
+
+### Full command line
+
+```sh
+markdown-safe-link \
+  --api="<YOUR_API_KEY_HERE>" \
+  --dir="~/projects/my-docs/" \
+  --replace="~~UNSAFE~~"      \
+  --proxy                     \
+    --url="127.0.0.1"         \
+    --port="3128"             \
+    --username="jdoe"         \
+    --password="MyPassword"   \
+  --dry
+```
 
 ## Contributing
 
