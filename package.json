@@ -4,7 +4,7 @@
 	"version": "1.0.7",
 	"main": "bin/index.js",
 	"author": "Mark Battistella (https://twitter.com/markbattistella)",
-	"license": "GNU GPLv3",
+	"license": "MIT",
 	"homepage": "https://github.com/markbattistella/markdown-safe-link",
 	"repository": {
 		"type": "git",
