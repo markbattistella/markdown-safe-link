@@ -14,7 +14,7 @@
 		"url": "git+https://github.com/markbattistella/markdown-safe-link/issues"
 	},
 	"dependencies": {
-		"axios": "^0.21.0",
+		"axios": "^1.6.0",
 		"glob": "^7.1.6"
 	},
 	"scripts": {},
