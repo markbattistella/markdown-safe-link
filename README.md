@@ -3,7 +3,6 @@
 # Markdown Safe Web Browsing
 
 [![Help donate](https://img.shields.io/badge/%20-@markbattistella-blue?logo=paypal)](https://www.paypal.me/markbattistella/6AUD)
-[![Buy me a coffee](https://img.shields.io/badge/%20-buymeacoffee-black?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/markbattistella)
 
 ---
 </div>
@@ -37,13 +36,15 @@ I realised there isn't anything out there to prevent this from happening to anyo
         --replace="~~UNSAFE~~"
     ```
 
-### Github action
+### GitHub action
 
 If you want to use this as part of your repository there is also [an action you can use](https://github.com/markbattistella/markdown-safe-link-action).
 
 ## Requirements
 
 You need to get your own API for [Google Safe Browsing](https://developers.google.com/safe-browsing/) as there are limits to the number of calls made.
+
+This package supports Node.js 20 and 22 or newer.
 
 ## Configuration
 
@@ -94,3 +95,11 @@ markdown-safe-link \
     `git push origin my-new-feature`
 
 1. Submit the `pull` request
+
+## Development
+
+```sh
+npm ci
+npm test
+npm run lint
+```

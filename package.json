@@ -1,8 +1,13 @@
 {
 	"name": "@markbattistella/markdown-safe-link",
 	"description": "Check the links used in your apps are safe",
-	"version": "1.0.7",
+	"version": "1.0.9",
 	"main": "bin/index.js",
+	"files": [
+		"bin",
+		"LICENSE",
+		"README.md"
+	],
 	"author": "Mark Battistella (https://twitter.com/markbattistella)",
 	"license": "MIT",
 	"homepage": "https://github.com/markbattistella/markdown-safe-link",
@@ -17,7 +22,13 @@
 		"axios": "^1.6.0",
 		"glob": "^13.0.6"
 	},
-	"scripts": {},
+	"engines": {
+		"node": "20 || >=22"
+	},
+	"scripts": {
+		"lint": "node --check bin/index.js",
+		"test": "node --test"
+	},
 	"bin": {
 		"markdown-safe-link": "bin/index.js"
 	}

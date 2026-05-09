@@ -1,456 +1,332 @@
 #!/usr/bin/env node
 
-'use strict'
+'use strict';
 
-//
-// MARK: import the modules
-//
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
-// access file system
-const fs = require('fs');
-
-// gloabl searching
+const axios = require('axios');
 const glob = require('glob');
 
-// xhttp requests
-const axios = require('axios');
+const DEFAULT_REPLACEMENT = '[~X~]';
+const URL_PATTERN = /https?:\/\/[^\s<>"'`]+/gi;
 
-// user home directory
-const homedir = require('os').homedir();
+const HELP_TEXT = [
+    '---------------------------------------------------',
+    '--              Markdown URL scanner             --',
+    '---------------------------------------------------',
+    '',
+    'Usage: markdown-safe-link [options]',
+    '',
+    'Options:',
+    '  --dir           The directory to scan md files',
+    '  --api           Your API key',
+    '  --proxy         Are you behind a proxy server',
+    '    --url         Proxy url address or IP address',
+    '    --port        Proxy port number',
+    '    --username    Username if your proxy has auth',
+    '    --password    Password if your proxy has auth',
+    '  --replace       String to replace bad urls with',
+    "  --dry           Don't actually re-write files",
+    '  --help          Display this screen',
+    '',
+    "Example:",
+    "markdown-safe-link --dir='~/docs' --api='qwerty12345' --replace='UNSAFE'",
+].join('\n');
 
-//
-// MARK: create the variables / constants
-//
+function parseArgs(argv) {
+    const args = {};
 
-// get the command line arguments
-const args = ( function( argv ) {
+    for (let index = 2; index < argv.length; index += 1) {
+        const argument = argv[index];
 
-    // remove `node` and `script` name
-    argv = argv.slice(2);
-
-    // returned object
-    var args = {};
-    var argName, argValue;
-
-    // loop through each argument
-    argv.forEach(function( arg, index ) {
-
-        // seperate argument, for a key/value return
-        arg = arg.split( '=' );
-
-        // retrieve the argument name
-        argName = arg[0];
-
-        // remove "--" or "-"
-        if( argName.indexOf('-') === 0 ) {
-            argName = argName.slice( argName.slice(0, 2).lastIndexOf('-') + 1 );
+        if (!argument.startsWith('-')) {
+            continue;
         }
 
-        // associate defined value or initialize it to "true" state
-        argValue = (arg.length === 2) ?
+        const match = argument.match(/^-{1,2}([^=]+)(?:=(.*))?$/);
 
-            // check if argument is valid number
-            parseFloat(arg[1]).toString() === arg[1]
-
-                ? +arg[1]
-                : arg[1]
-
-            : true;
-
-        // finally add the argument to the args set
-        args[argName] = argValue;
-    });
-
-    return args;
-})( process.argv );
-
-
-//
-// HELP: command line help
-//
-if( args.help ) {
-    return console.log(
-        "---------------------------------------------------\n"    +
-        "--              Markdown URL scanner             --\n"    +
-        "---------------------------------------------------\n"    +
-        "\n"                                                       +
-        "Usage: markdown-safe-link [options]\n\n"                  +
-        "Options:\n"                                               +
-        "  --dir           The directory to scan md files\n"       +
-        "  --api           Your API key\n"                         +
-        "  --proxy         Are you behind a proxy server\n"        +
-        "    --url         Proxy url address or IP address\n"      +
-        "    --port        Proxy port number\n"                    +
-        "    --username    Username if your proxy has auth\n"      +
-        "    --password    Password if your proxy has auth\n"      +
-        "  --replace       String to replace bad urls with\n"      +
-        "  --dry           Don't actually re-write files\n"        +
-        "  --help          Display this screen\n\n"                +
-        "Example: \nmarkdown-safe-link --dir='~/docs' --api='qwerty12345' --replace='UNSAFE'"
-    );
-}
-
-// api key checks
-const apiKey = function() {
-
-    // api not declared
-    if( !args.api ) { return 1;    }
-
-    // declared but empty
-    if( args.api === true ) { return 2; }
-
-    // all good
-    if( args.api && args.api !== true ) { return args.api; }
-
-} ( args );
-
-// get the directory
-const directory = function() {
-
-    // get the argument in a variable
-    let dirArg = args.dir;
-
-    // if not defined or defined but no value
-    if( !dirArg || dirArg && "" === dirArg )
-        return process.cwd();
-
-    // is first character a `~` and replace it with home
-    126 === dirArg.charCodeAt( 0 ) &&
-        ( dirArg = dirArg.replace( "~", homedir ) );
-
-    // is the string have an `.md` extension - strip it!
-    "md" == dirArg.split( "." ).pop() &&
-        ( dirArg = dirArg.substring( 0, dirArg.lastIndexOf( "/" ) ) );
-
-    // before we return it - strip the last `/`
-    return dirArg = dirArg.replace( /\/$/, "" )
-
-}( args );
-
-// the array of threat urls
-let urlThreats = [];
-
-// urls array
-let urlMatchesArray =[];
-
-// url variable
-let url = '';
-
-// array of markdown with urls
-const markdownFilesWithURLS = [];
-
-// get a list of files
-const markdownFilesArray = glob.sync(
-
-    // what to search for
-    directory + "/**/*.md",
-
-    // options
-    {
-        // ignore the node_modules
-        ignore: process.cwd() + '/node_modules/**/*.md',
-
-        // dont match directory
-        nodir:    true
-    }
-);
-
-
-//
-// MARK: loop through all the matched files
-//
-(function() {
-
-    //
-    // MARK: api key check
-    //
-    if( apiKey === 1 ) {
-        return console.log( "[x] Exiting: API argument not declared!" );
-    }
-    if( apiKey === 2 ) {
-        return console.log( "[x] Exiting: API key not provided!" );
-    }
-
-    // loop files
-    for( const markdownFile of markdownFilesArray ) {
-
-        //
-        // MARK: read markdown files
-        //
-
-        // DEBUG: log scan start
-        console.log( `[~] Reading file: "${ markdownFile.replace( directory, '' ) }"` );
-
-        // read the `markdownFile`
-        var markdownFileContents = fs.readFileSync( markdownFile, 'utf8' );
-
-        // build the regex array
-        // @matches: [url](http://google.com)    -> http://google.com
-        // @matches: [url](https://google.com)    -> https://google.com
-        // @matches: http://google.com            -> http://google.com
-        // @matches: https://google.com            -> https://google.com
-        // @matches: * also matches anchors and queries # / ?
-        var regexArray = markdownFileContents.matchAll( /(https?:\/\/\w+.[\w\/.?=&:#]+)/g );
-
-        // previous url count
-        const previousURLCount = urlMatchesArray.length;
-
-        // loop through regex results
-        for( const regex of regexArray ) {
-
-            // strip `.` from end of string
-            url = regex[0].replace( /\.+$/, "" );
-
-            // add it to the array
-            // urlMatchesArray.push( { url } );
-            urlMatchesArray.push( { url } );
+        if (!match) {
+            continue;
         }
 
-        // current url count (since it increments)
-        const currentURLCount = urlMatchesArray.length;
+        const name = match[1];
+        let value = match[2];
 
-        // calculate the total urls for this file
-        const foundURLs = ( currentURLCount - previousURLCount );
+        if (value === undefined) {
+            const nextValue = argv[index + 1];
 
-        // if there are no urls to parse
-        if( foundURLs < 1 ) {
-
-            // DEBUG: no urls in the file
-            console.log( `    [✔] Skipping: ${foundURLs} urls\n` );
-
-        } else {
-
-            // DEBUG: report how many urls there are
-            console.log( `    [i] Found: ${foundURLs} urls\n` );
-
-            // files with urls
-            markdownFilesWithURLS.push( markdownFile );
-        }
-    }
-
-// get these variables
-})( markdownFilesArray, urlMatchesArray, markdownFilesWithURLS );
-
-
-//
-// MARK: clean up found urls
-//
-const params = (function() {
-
-    // generate the variables
-    const    jsonToArray     = [],
-            truncatedURLs    = [];
-
-    // loop through all urls
-    urlMatchesArray.forEach( function( value ) {
-
-        // add it to a normal array
-        jsonToArray.push( value.url );
-
-    });
-
-    // make the array only unique url entries
-    const uniqueURL = [ ...new Set( jsonToArray ) ];
-
-    // loop through regexults
-    for( const url of uniqueURL ) {
-
-        // add it to the array
-        truncatedURLs.push( { url } );
-
-    }
-
-    // DEBUG: sending to Google Safe Browsing
-    console.log( "[i] Removing duplicates" );
-
-    // output for Google Safe Browsing
-    const parameters = JSON.stringify(
-        {
-            "client": {
-                "clientId":         "github-actions-safe-browsing",
-                "clientVersion":    "1.0.0"
-            },
-            "threatInfo": {
-                "threatTypes":      [
-                                        "MALWARE",
-                                        "SOCIAL_ENGINEERING",
-                                        "POTENTIALLY_HARMFUL_APPLICATION",
-                                        "UNWANTED_SOFTWARE"
-                                    ],
-                "platformTypes":    [ "ALL_PLATFORMS" ],
-                "threatEntryTypes": [ "URL" ],
-                "threatEntries":    truncatedURLs
+            if (nextValue && !nextValue.startsWith('-')) {
+                value = nextValue;
+                index += 1;
+            } else {
+                value = true;
             }
         }
-    );
 
-    // DEBUG: sending to Google Safe Browsing
-    console.log( `[i] Scanning: ${truncatedURLs.length} unique urls\n` );
+        args[name] = value;
+    }
 
-    // return them to the code
-    return parameters;
+    return args;
+}
 
-// get these variables
-})( urlMatchesArray );
+function booleanOption(value) {
+    return value === true || value === 'true' || value === '1' || value === 'yes';
+}
 
+function apiKeyFromArgs(args) {
+    if (!args.api) {
+        return { error: '[x] Exiting: API argument not declared!' };
+    }
 
-//
-// MARK: post the links to Google Safe Browsing
-//
-const unsafeScannedURLs = (function() {
+    if (args.api === true || args.api === '') {
+        return { error: '[x] Exiting: API key not provided!' };
+    }
 
-    // api key
-    // TODO: secure the key
-    const api = `?key=${ apiKey }`;
+    return { value: String(args.api) };
+}
 
-    // endpoint url
-    const endpoint = "https://safebrowsing.googleapis.com/v4/threatMatches:find" + api;
+function resolveTargetDirectory(dirArg) {
+    let target = dirArg;
 
-    // get the proxies for the poor corporate users :(
-    const proxyArgs = function() {
+    if (!target || target === true || target === '') {
+        return process.cwd();
+    }
 
-        // get the arguments from the commandline
-        const c = args.url, d = args.port, a = args.username, b = args.password;
+    target = String(target);
 
-        // get the details
-        if( args.proxy ) {
-            var e = "";
+    if (target === '~') {
+        target = os.homedir();
+    } else if (target.startsWith('~/')) {
+        target = path.join(os.homedir(), target.slice(2));
+    }
 
-            if ( c && d )
-                a && b &&    "" !== a &&
-                            "" !== b &&
-                            ( e = ", auth: { username: '" + a + "', password: '" + b + "' }" );
-            else return !1;
+    if (path.extname(target).toLowerCase() === '.md') {
+        target = path.dirname(target);
+    }
 
-            return "{ host: '" + ( c + "', port: " + d ) + e + " }"
+    return target.replace(/\/$/, '') || '.';
+}
 
-        } return !1
+function findMarkdownFiles(directory) {
+    return glob.sync(`${directory}/**/*.md`, {
+        ignore: ['**/node_modules/**'],
+        nodir: true,
+    });
+}
 
-    }( args );
+function cleanUrlMatch(url) {
+    return url.replace(/[)\].,;!?]+$/g, '');
+}
 
-    // axios POST
-    axios.post(
+function extractUrls(markdownFileContents) {
+    const urls = [];
 
-        // api endpoint
-        endpoint,
+    for (const match of markdownFileContents.matchAll(URL_PATTERN)) {
+        const url = cleanUrlMatch(match[0]);
 
-        // raw body parameters
-        params,
-
-        // extra config
-        {
-            headers:    { 'Content-type': 'application/json' },
-            timeout:    60 * 4 * 1000,
-            proxy:        proxyArgs
+        try {
+            new URL(url);
+            urls.push(url);
+        } catch {
+            // Ignore malformed matches rather than sending bad entries to the API.
         }
-    )
-    .then( function( response ) {
+    }
 
-        // get the matched bad urls
-        const badURLMatches = response.data.matches;
+    return urls;
+}
 
-        // if there are no bad urls -> exit
-        if( badURLMatches == undefined) {
-            console.log( "[i] No url sanitisation needed" );
-            console.log( "[✔] All urls safe for browsing" );
-            return
+function scanMarkdownFiles(markdownFiles, directory, logger = console) {
+    const urlMatches = [];
+    const markdownFilesWithUrls = [];
+
+    for (const markdownFile of markdownFiles) {
+        logger.log(`[~] Reading file: "${markdownFile.replace(directory, '')}"`);
+
+        const markdownFileContents = fs.readFileSync(markdownFile, 'utf8');
+        const urls = extractUrls(markdownFileContents);
+
+        for (const url of urls) {
+            urlMatches.push({ url });
         }
 
-        // loop through the bad urls
-        for( const badURL of badURLMatches ) {
-
-            // add to the array
-            urlThreats.push( badURL.threat.url );
+        if (urls.length < 1) {
+            logger.log(`    [i] Skipping: ${urls.length} urls\n`);
+            continue;
         }
 
-        // make the array only unique url entries
-        let uniqueURL = [ ...new Set( urlThreats ) ];
+        logger.log(`    [i] Found: ${urls.length} urls\n`);
+        markdownFilesWithUrls.push(markdownFile);
+    }
 
-        // DEBUG: start the cleaning
-        console.log( `[!] Found: ${uniqueURL.length} malicious urls` );
+    return { urlMatches, markdownFilesWithUrls };
+}
 
-        // report the urls
-        uniqueURL.forEach( function( value, i ) {
-            console.log( `    [%d]: detected %s`, ( i + 1 ), value );
-        });
+function uniqueUrls(urlMatches) {
+    return [...new Set(urlMatches.map((value) => value.url))];
+}
 
-        // notice of cleaning
-        console.log( "\n[~] Begin sanitisation of urls" );
+function safeBrowsingPayload(urls) {
+    return {
+        client: {
+            clientId: 'github-actions-safe-browsing',
+            clientVersion: '1.0.0',
+        },
+        threatInfo: {
+            threatTypes: [
+                'MALWARE',
+                'SOCIAL_ENGINEERING',
+                'POTENTIALLY_HARMFUL_APPLICATION',
+                'UNWANTED_SOFTWARE',
+            ],
+            platformTypes: ['ALL_PLATFORMS'],
+            threatEntryTypes: ['URL'],
+            threatEntries: urls.map((url) => ({ url })),
+        },
+    };
+}
 
-        // call to replace bad urls with REDACTED
-        replaceThreatsInMarkdown( uniqueURL, markdownFilesWithURLS );
+function proxyConfig(args) {
+    if (!booleanOption(args.proxy)) {
+        return undefined;
+    }
 
-    })
-    .catch( function( error ) {
+    const host = args.url;
+    const port = Number(args.port);
 
-        // DEBUG: log errors
-        console.log( "* * * * * * * * * * * * * * * * * * * * *" );
-        console.log( `ERROR: > ${error.response.data.error.message}`);
-        console.log( "* * * * * * * * * * * * * * * * * * * * *" );
+    if (!host || !Number.isInteger(port) || port < 1) {
+        throw new Error('Proxy mode requires --url and a numeric --port value.');
+    }
 
+    const proxy = { host: String(host), port };
+
+    if (args.username || args.password) {
+        proxy.auth = {
+            username: String(args.username || ''),
+            password: String(args.password || ''),
+        };
+    }
+
+    return proxy;
+}
+
+async function findUnsafeUrls(apiKey, urls, args) {
+    const endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(apiKey)}`;
+    const response = await axios.post(endpoint, safeBrowsingPayload(urls), {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 60 * 4 * 1000,
+        proxy: proxyConfig(args),
     });
 
-// get these variables
-})( params );
+    return response.data.matches || [];
+}
 
-//
-// MARK: replace text with REDACTED
-//
-function replaceThreatsInMarkdown( urls, markdown ) {
+function errorMessage(error) {
+    if (error.response && error.response.data && error.response.data.error) {
+        return error.response.data.error.message;
+    }
 
-    // get the argument
-    const replace = function() {
-        const a = args.replace;
+    return error.message || String(error);
+}
 
-        if( !a )
-            return "[~X~]";
+function replaceThreatsInMarkdown(urls, markdownFiles, args, logger = console) {
+    const replacement = args.replace ? String(args.replace) : DEFAULT_REPLACEMENT;
+    const dryRun = booleanOption(args.dry);
 
-        if( "" !== a )
-            return a
-    }( args );
+    for (const markdownFile of markdownFiles) {
+        let markdownFileContents = fs.readFileSync(markdownFile, 'utf8');
 
-    // get the argument
-    const dryrun = function() {
-        return args.dry ? !0 : !1
-    }( args );
+        logger.log(`    [~] Working on file: "${markdownFile}"`);
 
-    // loop files
-    for( const md of markdown ) {
-
-        // get the contents as variable
-        let mdFileContents = fs.readFileSync( md, 'utf8' );
-
-        // log the file working on
-        console.log( `    [~] Working on file: "${md}"` );
-
-        // loop through malicious urls
-        for( const url of urls ) {
-
-            // regex the url from markdown file
-            mdFileContents = mdFileContents.replace( new RegExp( url, "g" ), replace );
-
+        for (const url of urls) {
+            markdownFileContents = markdownFileContents.split(url).join(replacement);
         }
 
-        // dont actually rewrite
-        if( dryrun ) {
-
-            // tell the user
-            console.log( "   *[i] Dry run - no urls were replaced\n" );
-
-        } else {
-
-            // re-write the files
-            fs.writeFile( md, mdFileContents, 'utf8', function( err ) {
-
-                // DEBUG: errors
-                if( err ) return console.log( err );
-
-                // log the scan and clean
-                console.log( "        [✔] Removed url from: " + md );
-
-            });
+        if (dryRun) {
+            logger.log('   *[i] Dry run - no urls were replaced\n');
+            continue;
         }
+
+        fs.writeFileSync(markdownFile, markdownFileContents, 'utf8');
+        logger.log(`        [i] Removed url from: ${markdownFile}`);
     }
 }
 
-// end of file;
+async function main(argv = process.argv, logger = console) {
+    const args = parseArgs(argv);
+
+    if (args.help) {
+        logger.log(HELP_TEXT);
+        return 0;
+    }
+
+    const apiKey = apiKeyFromArgs(args);
+
+    if (apiKey.error) {
+        logger.error(apiKey.error);
+        return 1;
+    }
+
+    const directory = resolveTargetDirectory(args.dir);
+    const markdownFiles = findMarkdownFiles(directory);
+    const { urlMatches, markdownFilesWithUrls } = scanMarkdownFiles(markdownFiles, directory, logger);
+    const urls = uniqueUrls(urlMatches);
+
+    logger.log('[i] Removing duplicates');
+
+    if (urls.length < 1) {
+        logger.log('[i] No urls found');
+        logger.log('[i] No url sanitisation needed');
+        return 0;
+    }
+
+    logger.log(`[i] Scanning: ${urls.length} unique urls\n`);
+
+    const badURLMatches = await findUnsafeUrls(apiKey.value, urls, args);
+
+    if (badURLMatches.length < 1) {
+        logger.log('[i] No url sanitisation needed');
+        logger.log('[i] All urls safe for browsing');
+        return 0;
+    }
+
+    const urlThreats = uniqueUrls(badURLMatches.map((match) => ({ url: match.threat.url })));
+
+    logger.log(`[!] Found: ${urlThreats.length} malicious urls`);
+
+    urlThreats.forEach((value, index) => {
+        logger.log(`    [${index + 1}]: detected ${value}`);
+    });
+
+    logger.log('\n[~] Begin sanitisation of urls');
+    replaceThreatsInMarkdown(urlThreats, markdownFilesWithUrls, args, logger);
+
+    return 0;
+}
+
+if (require.main === module) {
+    main()
+        .then((exitCode) => {
+            process.exitCode = exitCode;
+        })
+        .catch((error) => {
+            console.error('* * * * * * * * * * * * * * * * * * * * *');
+            console.error(`ERROR: > ${errorMessage(error)}`);
+            console.error('* * * * * * * * * * * * * * * * * * * * *');
+            process.exitCode = 1;
+        });
+}
+
+module.exports = {
+    apiKeyFromArgs,
+    booleanOption,
+    cleanUrlMatch,
+    errorMessage,
+    extractUrls,
+    main,
+    parseArgs,
+    proxyConfig,
+    replaceThreatsInMarkdown,
+    resolveTargetDirectory,
+};
