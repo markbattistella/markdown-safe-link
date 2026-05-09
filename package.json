@@ -1,7 +1,7 @@
 {
 	"name": "@markbattistella/markdown-safe-link",
 	"description": "Check the links used in your apps are safe",
-	"version": "1.0.9",
+	"version": "2026.05.09",
 	"main": "bin/index.js",
 	"files": [
 		"bin",
