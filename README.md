@@ -106,7 +106,7 @@ npm run lint
 
 ## Release
 
-The release workflow publishes to npm and GitHub Packages when a version tag is pushed.
+The release workflow only runs when a version tag is pushed. It validates the package, then publishes to npm and GitHub Packages.
 
 ```sh
 npm version patch
