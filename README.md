@@ -106,11 +106,17 @@ npm run lint
 
 ## Release
 
-The release workflow only runs when a version tag is pushed. It validates the package, then publishes to npm and GitHub Packages.
+The release workflow only runs when a version tag is pushed. It validates the package, normalizes date-style tags for npm, then publishes to npm and GitHub Packages.
 
 ```sh
-npm version patch
-git push origin main --follow-tags
+npm version 2026.5.9 --no-git-tag-version
+git add package.json package-lock.json
+git commit -m "Release 2026.5.9"
+git tag 2026.05.09
+git push origin main
+git push origin 2026.05.09
 ```
 
-The tag must match the `package.json` version. For example, package version `1.0.9` must be tagged `1.0.9`.
+The tag can use leading zeroes for date-style releases. For example, tag `2026.05.09` is normalized to npm package version `2026.5.9`.
+
+If one registry publishes and the other fails, run the workflow manually from GitHub Actions and enter the same release tag, for example `2026.05.09`. The workflow checks each registry first and skips any package version that already exists.
