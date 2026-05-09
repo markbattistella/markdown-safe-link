@@ -103,3 +103,14 @@ npm ci
 npm test
 npm run lint
 ```
+
+## Release
+
+The release workflow publishes to npm and GitHub Packages when a version tag is pushed.
+
+```sh
+npm version patch
+git push origin main --follow-tags
+```
+
+The tag must match the `package.json` version. For example, package version `1.0.9` must be tagged `1.0.9`.
