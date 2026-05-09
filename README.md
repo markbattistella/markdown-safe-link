@@ -120,3 +120,18 @@ git push origin 2026.05.09
 The tag can use leading zeroes for date-style releases. For example, tag `2026.05.09` is normalized to npm package version `2026.5.9`.
 
 If one registry publishes and the other fails, run the workflow manually from GitHub Actions and enter the same release tag, for example `2026.05.09`. The workflow checks each registry first and skips any package version that already exists.
+
+### npm Trusted Publisher
+
+The npm publish job uses Trusted Publishing with GitHub Actions OIDC, so it does not need an `NPM_AUTH_TOKEN` secret.
+
+On npmjs.com, configure the package's trusted publisher with:
+
+| Field | Value |
+|-------|-------|
+| Organization or user | `markbattistella` |
+| Repository | `markdown-safe-link` |
+| Workflow filename | `release.yml` |
+| Environment name | Leave blank |
+
+Trusted Publisher settings are under the existing npm package's settings. If the package has never been published to npm, publish it once with a normal npm token first, then configure Trusted Publishing for future releases.
